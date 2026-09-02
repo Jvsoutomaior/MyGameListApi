@@ -13,5 +13,5 @@ public interface GameListEntryRepository extends JpaRepository<GameListEntry, UU
 
     Optional<GameListEntry> findByUserIdAndGameId(UUID userId, UUID gameId);
 
-    Page<GameListEntry> findByUserUsernameOrderByUpdatedAtDesc(String username, Pageable pageable);
+    Page<GameListEntry> findByUserUsername(String username, Pageable pageable);
 }

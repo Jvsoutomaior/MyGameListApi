@@ -72,7 +72,7 @@ class RepositoryPersistenceTests {
         gameListEntryRepository.saveAndFlush(entry);
 
         assertThat(gameListEntryRepository.findByUserIdAndGameId(user.getId(), game.getId())).containsSame(entry);
-        assertThat(gameListEntryRepository.findByUserUsernameOrderByUpdatedAtDesc("playerone", PageRequest.of(0, 10)))
+        assertThat(gameListEntryRepository.findByUserUsername("playerone", PageRequest.of(0, 10)))
                 .containsExactly(entry);
     }
 
