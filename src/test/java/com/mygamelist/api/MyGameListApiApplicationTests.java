@@ -1,7 +1,6 @@
 package com.mygamelist.api;
 
 import org.junit.jupiter.api.Test;
-
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.junit.jupiter.Container;
@@ -12,12 +11,9 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @SpringBootTest
 class MyGameListApiApplicationTests {
 
-	@Container
-	@ServiceConnection
-	static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17-alpine");
+  @Container @ServiceConnection
+  static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17-alpine");
 
-	@Test
-	void contextLoads() {
-	}
-
+  @Test
+  void contextLoads() {}
 }
