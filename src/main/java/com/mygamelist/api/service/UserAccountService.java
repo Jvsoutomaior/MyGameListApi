@@ -63,7 +63,7 @@ public class UserAccountService {
     return user;
   }
 
-  private UserAccount findById(UUID userId) {
+  public UserAccount findById(UUID userId) {
     return userAccountRepository
         .findById(userId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));

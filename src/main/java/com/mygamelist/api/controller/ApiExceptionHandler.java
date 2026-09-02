@@ -6,12 +6,18 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+  @ExceptionHandler(AuthenticationException.class)
+  ProblemDetail handleAuthentication() {
+    return problem(HttpStatus.UNAUTHORIZED, "Authentication failed", "Invalid email or password");
+  }
 
   @ExceptionHandler(ResourceConflictException.class)
   ProblemDetail handleConflict(ResourceConflictException exception) {
