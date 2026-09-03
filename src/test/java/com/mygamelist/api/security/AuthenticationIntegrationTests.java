@@ -3,6 +3,7 @@ package com.mygamelist.api.security;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -116,7 +117,11 @@ class AuthenticationIntegrationTests {
         .andExpect(status().isNoContent());
 
     assertThat(session.isInvalid()).isTrue();
-    mockMvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(get("/api/auth/me"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Authentication required"));
   }
 
   @Test
@@ -133,7 +138,9 @@ class AuthenticationIntegrationTests {
                       "password": "plain password"
                     }
                     """))
-        .andExpect(status().isForbidden());
+        .andExpect(status().isForbidden())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Access denied"));
 
     assertThat(userAccountRepository.count()).isZero();
   }

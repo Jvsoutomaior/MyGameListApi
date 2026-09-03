@@ -2,6 +2,7 @@ package com.mygamelist.api.config;
 
 import com.mygamelist.api.repository.UserAccountRepository;
 import com.mygamelist.api.security.AuthenticatedUser;
+import com.mygamelist.api.security.SecurityProblemWriter;
 import jakarta.servlet.DispatcherType;
 import java.util.List;
 import java.util.Locale;
@@ -33,7 +34,8 @@ public class SecurityConfiguration {
   SecurityFilterChain securityFilterChain(
       HttpSecurity http,
       SecurityContextRepository securityContextRepository,
-      CsrfTokenRepository csrfTokenRepository)
+      CsrfTokenRepository csrfTokenRepository,
+      SecurityProblemWriter securityProblemWriter)
       throws Exception {
     http.cors(Customizer.withDefaults())
         .csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository).spa())
@@ -46,6 +48,14 @@ public class SecurityConfiguration {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/auth/csrf")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/games/**", "/api/users/**")
+                    .permitAll()
+                    .requestMatchers(
+                        "/v3/api-docs/**",
+                        "/v3/api-docs.yaml",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html")
+                    .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/users", "/api/auth/login")
                     .permitAll()
                     .anyRequest()
@@ -55,9 +65,21 @@ public class SecurityConfiguration {
         .httpBasic(AbstractHttpConfigurer::disable)
         .exceptionHandling(
             exceptions ->
-                exceptions.authenticationEntryPoint(
-                    (request, response, exception) ->
-                        response.sendError(HttpStatus.UNAUTHORIZED.value())))
+                exceptions
+                    .authenticationEntryPoint(
+                        (request, response, exception) ->
+                            securityProblemWriter.write(
+                                response,
+                                HttpStatus.UNAUTHORIZED,
+                                "Authentication required",
+                                "Authentication is required to access this resource"))
+                    .accessDeniedHandler(
+                        (request, response, exception) ->
+                            securityProblemWriter.write(
+                                response,
+                                HttpStatus.FORBIDDEN,
+                                "Access denied",
+                                "You do not have permission to perform this request")))
         .logout(
             logout ->
                 logout

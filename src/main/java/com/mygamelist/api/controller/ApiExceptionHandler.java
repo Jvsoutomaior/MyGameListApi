@@ -4,6 +4,7 @@ import com.mygamelist.api.service.exception.ResourceConflictException;
 import com.mygamelist.api.service.exception.ResourceNotFoundException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.AuthenticationException;
@@ -22,6 +23,12 @@ public class ApiExceptionHandler {
   @ExceptionHandler(ResourceConflictException.class)
   ProblemDetail handleConflict(ResourceConflictException exception) {
     return problem(HttpStatus.CONFLICT, "Resource conflict", exception.getMessage());
+  }
+
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  ProblemDetail handleDataIntegrityViolation() {
+    return problem(
+        HttpStatus.CONFLICT, "Resource conflict", "The request conflicts with existing data");
   }
 
   @ExceptionHandler(ResourceNotFoundException.class)

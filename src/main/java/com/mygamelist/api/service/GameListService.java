@@ -68,6 +68,11 @@ public class GameListService {
     gameListEntryRepository.delete(findEntry(userId, gameId));
   }
 
+  public Page<GameListEntry> findList(UUID userId, int page, int size) {
+    Sort sort = listSort();
+    return gameListEntryRepository.findByUserId(userId, pageRequest(page, size, sort));
+  }
+
   public Page<GameListEntry> findPublicList(String username, int page, int size) {
     String normalizedUsername = normalizeUsername(username);
 
@@ -75,6 +80,17 @@ public class GameListService {
       throw new ResourceNotFoundException("User not found: " + normalizedUsername);
     }
 
+    Sort sort = listSort();
+    return gameListEntryRepository.findByUserUsername(
+        normalizedUsername, pageRequest(page, size, sort));
+  }
+
+  private static Sort listSort() {
+    return Sort.by(
+        Sort.Direction.DESC, path(GameListEntry::getUpdatedAt), path(GameListEntry::getId));
+  }
+
+  private static PageRequest pageRequest(int page, int size, Sort sort) {
     if (page < 0) {
       throw new IllegalArgumentException("page must not be negative");
     }
@@ -83,10 +99,7 @@ public class GameListService {
       throw new IllegalArgumentException("size must be between 1 and " + MAX_PAGE_SIZE);
     }
 
-    Sort sort =
-        Sort.by(Sort.Direction.DESC, path(GameListEntry::getUpdatedAt), path(GameListEntry::getId));
-    return gameListEntryRepository.findByUserUsername(
-        normalizedUsername, PageRequest.of(page, size, sort));
+    return PageRequest.of(page, size, sort);
   }
 
   private GameListEntry findEntry(UUID userId, UUID gameId) {
