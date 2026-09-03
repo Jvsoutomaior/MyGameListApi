@@ -15,6 +15,16 @@ Inicie o PostgreSQL:
 docker compose up -d
 ```
 
+Se a porta `5432` já estiver ocupada, publique o banco em outra porta:
+
+```bash
+POSTGRES_PORT=5433 docker compose up -d
+DATABASE_URL=jdbc:postgresql://localhost:5433/mygamelist ./mvnw spring-boot:run
+```
+
+O volume do PostgreSQL não depende da porta escolhida, portanto os dados locais são
+preservados ao alternar entre elas.
+
 Por padrão, a aplicação usa estas configurações locais:
 
 ```text
