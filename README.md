@@ -2,6 +2,28 @@
 
 API REST do MyGameList, construída com Java e Spring Boot.
 
+## Stack completo com Docker
+
+Quando `MyGameListApi` e `MyGameListWeb` estiverem lado a lado dentro da pasta
+`MyGameList`, use o Compose da pasta compartilhada para construir e iniciar o PostgreSQL,
+a API e o front-end:
+
+```bash
+cd ..
+docker compose up --build -d
+```
+
+Para acompanhar os logs ou encerrar todo o ambiente:
+
+```bash
+docker compose logs -f
+docker compose down
+```
+
+O banco fica disponível em `localhost:5433`, a API em `localhost:8080` e o front-end em
+`localhost:5174`. O volume do PostgreSQL é preservado por `docker compose down`; use a
+opção `--volumes` somente quando quiser apagar os dados locais.
+
 ## Pré-requisitos
 
 - Java 25
