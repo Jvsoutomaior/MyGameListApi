@@ -127,3 +127,11 @@ Com a aplicação em execução:
 Ative o perfil `prod` com `SPRING_PROFILES_ACTIVE=prod`. Esse perfil exige as variáveis
 `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD` e `FRONTEND_ORIGIN`, sem valores
 padrão inseguros, e força o cookie de sessão a usar `Secure`.
+
+## Licença
+
+Copyright 2026 João Vítor Motta Souto Maior.
+
+Este projeto é licenciado sob a [Apache License 2.0](LICENSE).
+Consulte também os avisos de autoria em [NOTICE](NOTICE).
+A licença do código não concede direitos sobre capas, marcas ou dados de terceiros.
