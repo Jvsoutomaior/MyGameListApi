@@ -8,6 +8,7 @@ COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
 RUN chmod +x mvnw && ./mvnw -B -ntp dependency:go-offline
 
+COPY LICENSE NOTICE /app-notices/
 COPY src/ src/
 RUN ./mvnw -B -ntp -DskipTests package
 
@@ -21,6 +22,8 @@ USER spring:spring
 COPY --from=build --chown=spring:spring \
   /workspace/target/mygamelist-api-0.0.1-SNAPSHOT.jar \
   /app/mygamelist-api.jar
+
+COPY --from=build /app-notices/ /app/
 
 EXPOSE 8080
 
