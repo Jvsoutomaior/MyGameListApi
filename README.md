@@ -2,32 +2,90 @@
 
 API REST do MyGameList, construída com Java e Spring Boot.
 
-## Stack completo com Docker
+## Ambientes com Docker
 
-Quando `MyGameListApi` e `MyGameListWeb` estiverem lado a lado dentro da pasta
-`MyGameList`, use o Compose da pasta compartilhada para construir e iniciar o PostgreSQL,
-a API e o front-end:
+O código é o mesmo nos dois ambientes e os arquivos dos dois ambientes devem acompanhar
+as branches `dev` e `main`. A diferença fica na configuração e no momento de promover
+uma versão validada para `main`.
+
+| Ambiente | Dockerfile | Compose | Comportamento |
+| --- | --- | --- | --- |
+| Desenvolvimento | `Dockerfile.dev` | `compose.dev.yaml` | Ferramentas de desenvolvimento e código local |
+| Produção | `Dockerfile` | `compose.prod.yaml` | Build compilado, sem montagem do código local |
+
+Com os dois repositórios lado a lado na pasta `MyGameList`, execute na pasta compartilhada:
 
 ```bash
-cd ..
-docker compose up --build -d
+./start-dev.sh
+./seed-dev.sh
 ```
 
-Para acompanhar os logs ou encerrar todo o ambiente:
+Acesse `http://localhost:5174`; a API fica em `http://localhost:8080` e o banco em
+`localhost:5433`. `./logs-dev.sh` acompanha os logs e `./stop-dev.sh` encerra o ambiente
+preservando os dados. `./reset-dev.sh` apaga e recria somente o banco de desenvolvimento.
+As portas de desenvolvimento ficam restritas ao computador local.
+
+O Compose da raiz inclui os arquivos de cada repositório, usando Docker Compose 2.20.3+
+([documentação de include](https://docs.docker.com/compose/how-tos/multiple-compose-files/include/)).
+O `compose.yaml` da raiz continua sendo um atalho para desenvolvimento.
+
+### Produção
+
+Na pasta compartilhada, copie `.env.prod.example` para `.env.prod`, preencha uma senha
+forte para `DATABASE_PASSWORD` e a origem pública HTTPS em `FRONTEND_ORIGIN` (sem caminho
+nem barra final). Nunca publique o arquivo real com credenciais.
 
 ```bash
-docker compose logs -f
-docker compose down
+docker compose --env-file .env.prod -f compose.prod.yaml config --quiet
+docker compose --env-file .env.prod -f compose.prod.yaml up --build -d --wait
 ```
 
-O banco fica disponível em `localhost:5433`, a API em `localhost:8080` e o front-end em
-`localhost:5174`. O volume do PostgreSQL é preservado por `docker compose down`; use a
-opção `--volumes` somente quando quiser apagar os dados locais.
+Esse ambiente usa o projeto `mygamelist-prod`, com volume separado do desenvolvimento.
+O banco e a API não publicam portas; o front atende em `127.0.0.1:8081`, ajustável por
+`PROD_WEB_PORT`. É necessário configurar um proxy HTTPS confiável no host para publicar
+o domínio, preservar `Host` e sobrescrever `X-Forwarded-Proto` com `https`.
+
+O Nginx do front encaminha `/api` para a API na mesma origem, preservando o caminho.
+A imagem de produção usa `VITE_API_BASE_URL` vazio, então o navegador usa URLs relativas.
+Isso permite ler o cookie CSRF na origem do front. A API usa o perfil `prod`, cookies de
+sessão `Secure` e documentação Swagger desativada. Login por HTTP local não é um teste
+válido desse ambiente: os cookies de sessão exigem HTTPS.
+
+A configuração prepara a execução; domínio, certificados, hospedagem e backups ainda
+precisam ser definidos antes de disponibilizar o serviço. Não use `down --volumes` em
+produção, pois isso apaga o banco. Para encerrar preservando os dados:
+
+```bash
+docker compose --env-file .env.prod -f compose.prod.yaml down
+```
 
 ## Pré-requisitos
 
 - Java 25
 - Docker
+
+## Desenvolvimento da API no Docker
+
+Para iniciar somente banco e API a partir deste repositório:
+
+```bash
+docker compose -f compose.dev.yaml up --build -d --wait
+```
+
+`src` é montado em modo de leitura. Depois de editar Java, recompile e reinicie com:
+
+```bash
+docker compose -f compose.dev.yaml restart api
+```
+
+Se iniciou pela raiz com os scripts, execute o reinício pela raiz, mantendo o mesmo projeto:
+
+```bash
+docker compose -p mygamelist -f compose.dev.yaml restart api
+```
+
+Ao alterar `pom.xml`, reconstrua a imagem. O `compose.yaml` deste repositório continua
+iniciando somente PostgreSQL para quem executa Java diretamente no host.
 
 ## Banco de dados local
 
@@ -127,3 +185,11 @@ Com a aplicação em execução:
 Ative o perfil `prod` com `SPRING_PROFILES_ACTIVE=prod`. Esse perfil exige as variáveis
 `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD` e `FRONTEND_ORIGIN`, sem valores
 padrão inseguros, e força o cookie de sessão a usar `Secure`.
+
+## Licença
+
+Copyright 2026 João Vítor Motta Souto Maior.
+
+Este projeto é licenciado sob a [Apache License 2.0](LICENSE).
+Consulte também os avisos de autoria em [NOTICE](NOTICE).
+A licença do código não concede direitos sobre capas, marcas ou dados de terceiros.
