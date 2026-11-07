@@ -6,7 +6,6 @@ import com.mygamelist.api.security.SecurityProblemWriter;
 import jakarta.servlet.DispatcherType;
 import java.util.List;
 import java.util.Locale;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -116,10 +115,9 @@ public class SecurityConfiguration {
   }
 
   @Bean
-  CorsConfigurationSource corsConfigurationSource(
-      @Value("${app.cors.allowed-origin:http://localhost:5173}") String allowedOrigin) {
+  CorsConfigurationSource corsConfigurationSource(CorsProperties corsProperties) {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(List.of(allowedOrigin));
+    configuration.setAllowedOrigins(List.of(corsProperties.getAllowedOrigin()));
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN"));
     configuration.setExposedHeaders(List.of("Location"));

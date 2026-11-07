@@ -1,5 +1,6 @@
 package com.mygamelist.api.service;
 
+import com.mygamelist.api.config.RegistrationProperties;
 import com.mygamelist.api.entity.UserAccount;
 import com.mygamelist.api.repository.UserAccountRepository;
 import com.mygamelist.api.service.exception.RegistrationUnavailableException;
@@ -8,7 +9,6 @@ import com.mygamelist.api.service.exception.ResourceNotFoundException;
 import java.time.Clock;
 import java.util.Locale;
 import java.util.UUID;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,11 +25,11 @@ public class UserAccountService {
   public UserAccountService(
       UserAccountRepository userAccountRepository,
       PasswordEncoder passwordEncoder,
-      @Value("${app.registration.invite-code}") String expectedInvitationCode,
+      RegistrationProperties registrationProperties,
       Clock clock) {
     this.userAccountRepository = userAccountRepository;
     this.passwordEncoder = passwordEncoder;
-    this.expectedInvitationCode = expectedInvitationCode;
+    this.expectedInvitationCode = registrationProperties.getInviteCode();
     this.clock = clock;
   }
 

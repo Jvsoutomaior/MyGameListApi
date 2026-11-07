@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.mygamelist.api.config.RegistrationProperties;
 import com.mygamelist.api.entity.UserAccount;
 import com.mygamelist.api.repository.UserAccountRepository;
 import com.mygamelist.api.service.exception.RegistrationUnavailableException;
@@ -40,7 +41,11 @@ class UserAccountServiceTests {
   void setUp() {
     Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
     userAccountService =
-        new UserAccountService(userAccountRepository, passwordEncoder, "test-invitation", clock);
+        new UserAccountService(
+            userAccountRepository,
+            passwordEncoder,
+            registrationProperties("test-invitation"),
+            clock);
   }
 
   @Test
@@ -98,7 +103,7 @@ class UserAccountServiceTests {
         new UserAccountService(
             userAccountRepository,
             passwordEncoder,
-            configuredCode,
+            registrationProperties(configuredCode),
             Clock.fixed(NOW, ZoneOffset.UTC));
 
     // Even an identical empty input must never open registration.
@@ -110,5 +115,11 @@ class UserAccountServiceTests {
         .hasMessage("Registration is unavailable");
 
     verifyNoInteractions(userAccountRepository, passwordEncoder);
+  }
+
+  private static RegistrationProperties registrationProperties(String inviteCode) {
+    RegistrationProperties properties = new RegistrationProperties();
+    properties.setInviteCode(inviteCode);
+    return properties;
   }
 }
