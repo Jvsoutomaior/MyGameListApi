@@ -12,6 +12,8 @@ import com.mygamelist.api.repository.UserAccountRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -25,7 +27,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
-@SpringBootTest
+@SpringBootTest(properties = "app.registration.invite-code=test-invitation")
 @AutoConfigureMockMvc
 @Testcontainers
 class AuthenticationIntegrationTests {
@@ -56,7 +58,8 @@ class AuthenticationIntegrationTests {
                             {
                               "username": "PlayerOne",
                               "email": "player@example.com",
-                              "password": "plain password"
+                              "password": "plain password",
+                              "invitationCode": "test-invitation"
                             }
                             """),
                 csrf))
@@ -135,12 +138,33 @@ class AuthenticationIntegrationTests {
                     {
                       "username": "playerone",
                       "email": "player@example.com",
-                      "password": "plain password"
+                      "password": "plain password",
+                      "invitationCode": "test-invitation"
                     }
                     """))
         .andExpect(status().isForbidden())
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.title").value("Access denied"));
+
+    assertThat(userAccountRepository.count()).isZero();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"wrong-code", ""})
+  void rejectsInvalidInvitationWithoutPersistingUser(String invitationCode) throws Exception {
+    CsrfCredentials csrf = obtainCsrf(null);
+    mockMvc
+        .perform(
+            withCsrf(
+                post("/api/users")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+            {"username":"playerone","email":"player@example.com","password":"plain password","invitationCode":"%s"}
+            """
+                            .formatted(invitationCode)),
+                csrf))
+        .andExpect(status().isBadRequest());
 
     assertThat(userAccountRepository.count()).isZero();
   }

@@ -1,5 +1,6 @@
 package com.mygamelist.api.controller;
 
+import com.mygamelist.api.service.exception.RegistrationUnavailableException;
 import com.mygamelist.api.service.exception.ResourceConflictException;
 import com.mygamelist.api.service.exception.ResourceNotFoundException;
 import java.util.LinkedHashMap;
@@ -34,6 +35,12 @@ public class ApiExceptionHandler {
   @ExceptionHandler(ResourceNotFoundException.class)
   ProblemDetail handleNotFound(ResourceNotFoundException exception) {
     return problem(HttpStatus.NOT_FOUND, "Resource not found", exception.getMessage());
+  }
+
+  @ExceptionHandler(RegistrationUnavailableException.class)
+  ProblemDetail handleRegistrationUnavailable(RegistrationUnavailableException exception) {
+    return problem(
+        HttpStatus.SERVICE_UNAVAILABLE, "Registration unavailable", exception.getMessage());
   }
 
   @ExceptionHandler(IllegalArgumentException.class)

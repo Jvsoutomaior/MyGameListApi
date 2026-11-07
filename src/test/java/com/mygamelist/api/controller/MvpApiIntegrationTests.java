@@ -33,7 +33,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
-@SpringBootTest
+@SpringBootTest(properties = "app.registration.invite-code=test-invitation")
 @AutoConfigureMockMvc
 @Testcontainers
 class MvpApiIntegrationTests {
@@ -67,8 +67,10 @@ class MvpApiIntegrationTests {
     userAccountRepository.deleteAll();
     gameRepository.deleteAll();
 
-    alice = userAccountService.register("alice", "alice@example.com", "alice password");
-    bob = userAccountService.register("bob", "bob@example.com", "bob password");
+    alice =
+        userAccountService.register(
+            "alice", "alice@example.com", "alice password", "test-invitation");
+    bob = userAccountService.register("bob", "bob@example.com", "bob password", "test-invitation");
     witcher = gameRepository.save(new Game("TEST", "witcher-3", "The Witcher 3", null, null, NOW));
     portal = gameRepository.save(new Game("TEST", "portal-2", "Portal 2", null, null, NOW));
     hades = gameRepository.save(new Game("TEST", "hades", "Hades", null, null, NOW));

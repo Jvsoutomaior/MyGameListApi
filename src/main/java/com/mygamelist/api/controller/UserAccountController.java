@@ -25,7 +25,8 @@ public class UserAccountController {
   @PostMapping
   public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterUserRequest request) {
     UserAccount user =
-        userAccountService.register(request.username(), request.email(), request.password());
+        userAccountService.register(
+            request.username(), request.email(), request.password(), request.invitationCode());
     URI location = URI.create("/api/users/" + user.getUsername());
     return ResponseEntity.created(location).body(UserResponse.from(user));
   }

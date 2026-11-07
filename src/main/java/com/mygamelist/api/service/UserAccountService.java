@@ -2,11 +2,13 @@ package com.mygamelist.api.service;
 
 import com.mygamelist.api.entity.UserAccount;
 import com.mygamelist.api.repository.UserAccountRepository;
+import com.mygamelist.api.service.exception.RegistrationUnavailableException;
 import com.mygamelist.api.service.exception.ResourceConflictException;
 import com.mygamelist.api.service.exception.ResourceNotFoundException;
 import java.time.Clock;
 import java.util.Locale;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,17 +19,30 @@ public class UserAccountService {
 
   private final UserAccountRepository userAccountRepository;
   private final PasswordEncoder passwordEncoder;
+  private final String expectedInvitationCode;
   private final Clock clock;
 
   public UserAccountService(
-      UserAccountRepository userAccountRepository, PasswordEncoder passwordEncoder, Clock clock) {
+      UserAccountRepository userAccountRepository,
+      PasswordEncoder passwordEncoder,
+      @Value("${app.registration.invite-code}") String expectedInvitationCode,
+      Clock clock) {
     this.userAccountRepository = userAccountRepository;
     this.passwordEncoder = passwordEncoder;
+    this.expectedInvitationCode = expectedInvitationCode;
     this.clock = clock;
   }
 
   @Transactional
-  public UserAccount register(String username, String email, String rawPassword) {
+  public UserAccount register(
+      String username, String email, String rawPassword, String invitationCode) {
+    if (expectedInvitationCode == null || expectedInvitationCode.isBlank()) {
+      throw new RegistrationUnavailableException();
+    }
+    if (!expectedInvitationCode.equals(invitationCode)) {
+      throw new IllegalArgumentException("Invalid invitation code");
+    }
+
     String normalizedUsername = normalizeIdentifier(username, "username");
     String normalizedEmail = normalizeIdentifier(email, "email");
 

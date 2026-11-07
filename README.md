@@ -85,7 +85,7 @@ compilador:
 | Método | Endpoint | Acesso | Finalidade |
 | --- | --- | --- | --- |
 | `GET` | `/api/auth/csrf` | Público | Obtém o token CSRF |
-| `POST` | `/api/users` | Público | Cria uma conta |
+| `POST` | `/api/users` | Público, com convite | Cria uma conta |
 | `POST` | `/api/auth/login` | Público | Inicia uma sessão |
 | `GET` | `/api/auth/me` | Autenticado | Retorna o usuário da sessão |
 | `POST` | `/api/auth/logout` | Autenticado | Encerra a sessão |
@@ -104,6 +104,19 @@ As respostas paginadas contêm `content`, `page`, `size`, `totalElements`,
 O catálogo é somente leitura pela API. Os jogos usados nos testes são criados como
 fixtures e não existe endpoint de cadastro manual. Uma integração futura será responsável
 por sincronizar os jogos de uma fonte externa.
+
+## Cadastro por convite
+
+Defina `APP_REGISTRATION_INVITE_CODE` no ambiente do processo Java (por exemplo, nas
+variáveis da configuração de execução do IntelliJ). O Spring não carrega `.env`
+automaticamente; esse arquivo é local e não deve ser versionado.
+
+O `POST /api/users` exige `username`, `email`, `password` e `invitationCode` no JSON.
+Um convite incorreto retorna `400`; ausente, vazio ou com mais de 128 caracteres
+é rejeitado pela validação do DTO. Sem um código configurado (ou com apenas espaços),
+o cadastro fica indisponível e uma requisição válida retorna `503`. Login e contas
+existentes continuam funcionando. Trocar o código exige reiniciar a aplicação.
+O convite nunca é incluído na resposta de cadastro.
 
 ## Sessão e CSRF
 

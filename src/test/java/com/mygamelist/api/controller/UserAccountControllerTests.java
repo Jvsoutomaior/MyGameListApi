@@ -10,12 +10,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.mygamelist.api.entity.UserAccount;
 import com.mygamelist.api.service.UserAccountService;
+import com.mygamelist.api.service.exception.RegistrationUnavailableException;
 import com.mygamelist.api.service.exception.ResourceConflictException;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
@@ -47,7 +50,8 @@ class UserAccountControllerTests {
     UserAccount user =
         new UserAccount("playerone", "player@example.com", "argon2id-hash", CREATED_AT);
     ReflectionTestUtils.setField(user, "id", USER_ID);
-    when(userAccountService.register("PlayerOne", "player@example.com", "plain password"))
+    when(userAccountService.register(
+            "PlayerOne", "player@example.com", "plain password", "test-invitation"))
         .thenReturn(user);
 
     mockMvc
@@ -59,7 +63,8 @@ class UserAccountControllerTests {
                     {
                       "username": "PlayerOne",
                       "email": "player@example.com",
-                      "password": "plain password"
+                      "password": "plain password",
+                      "invitationCode": "test-invitation"
                     }
                     """))
         .andExpect(status().isCreated())
@@ -69,9 +74,11 @@ class UserAccountControllerTests {
         .andExpect(jsonPath("$.createdAt").value(CREATED_AT.toString()))
         .andExpect(jsonPath("$.email").doesNotExist())
         .andExpect(jsonPath("$.password").doesNotExist())
-        .andExpect(jsonPath("$.passwordHash").doesNotExist());
+        .andExpect(jsonPath("$.passwordHash").doesNotExist())
+        .andExpect(jsonPath("$.invitationCode").doesNotExist());
 
-    verify(userAccountService).register("PlayerOne", "player@example.com", "plain password");
+    verify(userAccountService)
+        .register("PlayerOne", "player@example.com", "plain password", "test-invitation");
   }
 
   @Test
@@ -99,7 +106,8 @@ class UserAccountControllerTests {
 
   @Test
   void returnsConflictWhenUsernameOrEmailAlreadyExists() throws Exception {
-    when(userAccountService.register("playerone", "player@example.com", "plain password"))
+    when(userAccountService.register(
+            "playerone", "player@example.com", "plain password", "test-invitation"))
         .thenThrow(new ResourceConflictException("Username is already in use"));
 
     mockMvc
@@ -111,11 +119,89 @@ class UserAccountControllerTests {
                     {
                       "username": "playerone",
                       "email": "player@example.com",
-                      "password": "plain password"
+                      "password": "plain password",
+                      "invitationCode": "test-invitation"
                     }
                     """))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.title").value("Resource conflict"))
         .andExpect(jsonPath("$.detail").value("Username is already in use"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "{}",
+        "{\"invitationCode\":null}",
+        "{\"invitationCode\":\"\"}",
+        "{\"invitationCode\":\"   \"}"
+      })
+  void rejectsMissingOrBlankInvitationBeforeCallingService(String invitationJson) throws Exception {
+    String fields = invitationJson.substring(1, invitationJson.length() - 1);
+    String request =
+        """
+        {"username":"playerone","email":"player@example.com","password":"plain password"%s}
+        """
+            .formatted(fields.isEmpty() ? "" : "," + fields);
+
+    mockMvc
+        .perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content(request))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errors.invitationCode").exists());
+
+    verifyNoInteractions(userAccountService);
+  }
+
+  @Test
+  void rejectsOversizedInvitationBeforeCallingService() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+        {"username":"playerone","email":"player@example.com","password":"plain password","invitationCode":"%s"}
+        """
+                        .formatted("x".repeat(129))))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errors.invitationCode").exists());
+
+    verifyNoInteractions(userAccountService);
+  }
+
+  @Test
+  void returnsBadRequestForIncorrectInvitation() throws Exception {
+    when(userAccountService.register(
+            "playerone", "player@example.com", "plain password", "wrong-code"))
+        .thenThrow(new IllegalArgumentException("Invalid invitation code"));
+
+    mockMvc
+        .perform(
+            post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+        {"username":"playerone","email":"player@example.com","password":"plain password","invitationCode":"wrong-code"}
+        """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.detail").value("Invalid invitation code"));
+  }
+
+  @Test
+  void returnsServiceUnavailableWhenRegistrationIsDisabled() throws Exception {
+    when(userAccountService.register(
+            "playerone", "player@example.com", "plain password", "test-invitation"))
+        .thenThrow(new RegistrationUnavailableException());
+
+    mockMvc
+        .perform(
+            post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+        {"username":"playerone","email":"player@example.com","password":"plain password","invitationCode":"test-invitation"}
+        """))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.detail").value("Registration is unavailable"));
   }
 }

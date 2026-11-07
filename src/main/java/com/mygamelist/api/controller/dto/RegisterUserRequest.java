@@ -13,4 +13,5 @@ public record RegisterUserRequest(
             message = "must contain only letters, numbers, and underscores")
         String username,
     @NotBlank @Email @Size(max = 254) String email,
-    @NotBlank @Size(min = 8, max = 128) String password) {}
+    @NotBlank @Size(min = 8, max = 128) String password,
+    @NotBlank @Size(max = 128) String invitationCode) {}
