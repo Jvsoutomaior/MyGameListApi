@@ -28,7 +28,7 @@ class RepositoryPersistenceTests {
   private static final Instant NOW = Instant.parse("2026-09-01T12:00:00Z");
 
   @Container @ServiceConnection
-  static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17-alpine");
+  static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
   @Autowired private UserAccountRepository userAccountRepository;
 

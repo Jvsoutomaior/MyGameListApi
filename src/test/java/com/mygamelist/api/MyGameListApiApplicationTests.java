@@ -12,7 +12,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 class MyGameListApiApplicationTests {
 
   @Container @ServiceConnection
-  static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17-alpine");
+  static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
   @Test
   void contextLoads() {}

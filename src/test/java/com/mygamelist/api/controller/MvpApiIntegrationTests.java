@@ -41,7 +41,7 @@ class MvpApiIntegrationTests {
   private static final Instant NOW = Instant.parse("2026-09-02T12:00:00Z");
 
   @Container @ServiceConnection
-  static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17-alpine");
+  static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
   @Autowired private MockMvc mockMvc;
 
@@ -150,6 +150,18 @@ class MvpApiIntegrationTests {
                     {"status":"DROPPED"}
                     """))
         .andExpect(status().isNotFound());
+
+    mockMvc
+        .perform(
+            delete("/api/me/games/{gameId}", portal.getId()).session(aliceSession).with(csrf()))
+        .andExpect(status().isNotFound());
+
+    mockMvc
+        .perform(get("/api/users/bob/games"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(1))
+        .andExpect(jsonPath("$.content[0].game.id").value(portal.getId().toString()))
+        .andExpect(jsonPath("$.content[0].status").value("PLAYING"));
 
     mockMvc
         .perform(
