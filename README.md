@@ -2,28 +2,6 @@
 
 API REST do MyGameList, construída com Java e Spring Boot.
 
-## Stack completo com Docker
-
-Quando `MyGameListApi` e `MyGameListWeb` estiverem lado a lado dentro da pasta
-`MyGameList`, use o Compose da pasta compartilhada para construir e iniciar o PostgreSQL,
-a API e o front-end:
-
-```bash
-cd ..
-docker compose up --build -d
-```
-
-Para acompanhar os logs ou encerrar todo o ambiente:
-
-```bash
-docker compose logs -f
-docker compose down
-```
-
-O banco fica disponível em `localhost:5433`, a API em `localhost:8080` e o front-end em
-`localhost:5174`. O volume do PostgreSQL é preservado por `docker compose down`; use a
-opção `--volumes` somente quando quiser apagar os dados locais.
-
 ## Pré-requisitos
 
 - Java 25
@@ -34,28 +12,8 @@ opção `--volumes` somente quando quiser apagar os dados locais.
 Inicie o PostgreSQL:
 
 ```bash
-docker compose up -d
+docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres
 ```
-
-Se a porta `5432` já estiver ocupada, publique o banco em outra porta:
-
-```bash
-POSTGRES_PORT=5433 docker compose up -d
-DATABASE_URL=jdbc:postgresql://localhost:5433/mygamelist ./mvnw spring-boot:run
-```
-
-O volume do PostgreSQL não depende da porta escolhida, portanto os dados locais são
-preservados ao alternar entre elas.
-
-Por padrão, a aplicação usa estas configurações locais:
-
-```text
-DATABASE_URL=jdbc:postgresql://localhost:5432/mygamelist
-DATABASE_USERNAME=mygamelist
-DATABASE_PASSWORD=mygamelist
-```
-
-As três variáveis podem ser sobrescritas no ambiente.
 
 ## Executar a aplicação
 
@@ -105,19 +63,6 @@ O catálogo é somente leitura pela API. Os jogos usados nos testes são criados
 fixtures e não existe endpoint de cadastro manual. Uma integração futura será responsável
 por sincronizar os jogos de uma fonte externa.
 
-## Cadastro por convite
-
-Defina `APP_REGISTRATION_INVITE_CODE` no ambiente do processo Java (por exemplo, nas
-variáveis da configuração de execução do IntelliJ). O Spring não carrega `.env`
-automaticamente; esse arquivo é local e não deve ser versionado.
-
-O `POST /api/users` exige `username`, `email`, `password` e `invitationCode` no JSON.
-Um convite incorreto retorna `400`; ausente, vazio ou com mais de 128 caracteres
-é rejeitado pela validação do DTO. Sem um código configurado (ou com apenas espaços),
-o cadastro fica indisponível e uma requisição válida retorna `503`. Login e contas
-existentes continuam funcionando. Trocar o código exige reiniciar a aplicação.
-O convite nunca é incluído na resposta de cadastro.
-
 ## Sessão e CSRF
 
 O front-end deve enviar as requisições com cookies (`credentials: "include"`). Antes de
@@ -135,8 +80,23 @@ Com a aplicação em execução:
 - OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 
-## Configuração de produção
+## Verificação de segurança após o deploy
 
-Ative o perfil `prod` com `SPRING_PROFILES_ACTIVE=prod`. Esse perfil exige as variáveis
-`DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD` e `FRONTEND_ORIGIN`, sem valores
-padrão inseguros, e força o cookie de sessão a usar `Secure`.
+Execute os testes rápidos contra a origem HTTPS publicada, usando Python 3.
+
+```bash
+python3 scripts/security-smoke.py https://ENDERECO_DO_SITE
+```
+
+O script verifica o redirecionamento, os cabeçalhos do frontend, o acesso anônimo,
+CSRF, CORS, uma busca com entrada suspeita e a exposição pública do OpenAPI.
+Ele retorna código diferente de zero se algum teste falhar.
+
+Passe `--check-rate-limit` para testar também o HTTP 429. Essa opção consome
+temporariamente a cota de login e cadastro do IP que executa o teste.
+O teste de isolamento entre usuários roda com `./mvnw verify` e usa dados descartáveis.
+
+## Licença
+
+O código da API é disponibilizado sob a [Apache License 2.0](LICENSE).
+O arquivo [NOTICE](NOTICE) contém o aviso de autoria.
