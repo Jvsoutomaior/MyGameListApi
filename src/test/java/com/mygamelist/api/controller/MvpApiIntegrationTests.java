@@ -19,6 +19,7 @@ import com.mygamelist.api.repository.UserAccountRepository;
 import com.mygamelist.api.service.GameListService;
 import com.mygamelist.api.service.UserAccountService;
 import java.time.Instant;
+import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,6 +75,43 @@ class MvpApiIntegrationTests {
     witcher = gameRepository.save(new Game("TEST", "witcher-3", "The Witcher 3", null, null, NOW));
     portal = gameRepository.save(new Game("TEST", "portal-2", "Portal 2", null, null, NOW));
     hades = gameRepository.save(new Game("TEST", "hades", "Hades", null, null, NOW));
+  }
+
+  @Test
+  void listsRecentlyReleasedGamesWithCovers() throws Exception {
+    gameRepository.save(
+        new Game(
+            "TEST",
+            "older",
+            "Older",
+            "https://example.com/older.jpg",
+            LocalDate.of(2020, 1, 1),
+            NOW));
+    gameRepository.save(
+        new Game(
+            "TEST",
+            "recent",
+            "Recent",
+            "https://example.com/recent.jpg",
+            LocalDate.of(2024, 1, 1),
+            NOW));
+    gameRepository.save(
+        new Game(
+            "TEST",
+            "future",
+            "Future",
+            "https://example.com/future.jpg",
+            LocalDate.of(9999, 1, 1),
+            NOW));
+    gameRepository.save(
+        new Game("TEST", "no-cover", "No cover", null, LocalDate.of(2025, 1, 1), NOW));
+
+    mockMvc
+        .perform(get("/api/games/recent"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(2))
+        .andExpect(jsonPath("$[0].title").value("Recent"))
+        .andExpect(jsonPath("$[1].title").value("Older"));
   }
 
   @Test

@@ -3,6 +3,7 @@ package com.mygamelist.api.controller;
 import com.mygamelist.api.controller.dto.GameResponse;
 import com.mygamelist.api.controller.dto.PageResponse;
 import com.mygamelist.api.service.GameCatalogService;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,6 +27,11 @@ public class GameCatalogController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
     return PageResponse.from(gameCatalogService.search(query, page, size), GameResponse::from);
+  }
+
+  @GetMapping("/recent")
+  public List<GameResponse> recent() {
+    return gameCatalogService.findRecentGames().stream().map(GameResponse::from).toList();
   }
 
   @GetMapping("/{gameId}")

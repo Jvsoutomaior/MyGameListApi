@@ -49,6 +49,7 @@ compilador:
 | `POST` | `/api/auth/logout` | Autenticado | Encerra a sessão |
 | `GET` | `/api/games?query=...` | Público | Pesquisa o catálogo com paginação |
 | `GET` | `/api/games/{gameId}` | Público | Consulta um jogo |
+| `GET` | `/api/games/recent` | Público | Lista até 18 jogos lançados recentemente com capa |
 | `GET` | `/api/me/games` | Autenticado | Consulta a própria lista |
 | `POST` | `/api/me/games` | Autenticado | Adiciona um jogo à própria lista |
 | `PATCH` | `/api/me/games/{gameId}` | Autenticado | Atualiza uma entrada própria |
