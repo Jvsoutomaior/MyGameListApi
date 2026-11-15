@@ -31,7 +31,15 @@ public class GameCatalogController {
 
   @GetMapping("/recent")
   public List<GameResponse> recent() {
-    return gameCatalogService.findRecentGames().stream().map(GameResponse::from).toList();
+    return gameCatalogService.findRecentGames(0, 18).getContent().stream()
+        .map(GameResponse::from)
+        .toList();
+  }
+
+  @GetMapping("/recent/pages")
+  public PageResponse<GameResponse> recentPage(
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "18") int size) {
+    return PageResponse.from(gameCatalogService.findRecentGames(page, size), GameResponse::from);
   }
 
   @GetMapping("/{gameId}")

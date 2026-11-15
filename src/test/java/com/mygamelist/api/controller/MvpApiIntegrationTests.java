@@ -112,6 +112,23 @@ class MvpApiIntegrationTests {
         .andExpect(jsonPath("$.length()").value(2))
         .andExpect(jsonPath("$[0].title").value("Recent"))
         .andExpect(jsonPath("$[1].title").value("Older"));
+
+    mockMvc
+        .perform(get("/api/games/recent/pages").param("size", "1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(1))
+        .andExpect(jsonPath("$.content[0].title").value("Recent"))
+        .andExpect(jsonPath("$.page").value(0))
+        .andExpect(jsonPath("$.totalPages").value(2))
+        .andExpect(jsonPath("$.last").value(false));
+
+    mockMvc
+        .perform(get("/api/games/recent/pages").param("page", "1").param("size", "1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(1))
+        .andExpect(jsonPath("$.content[0].title").value("Older"))
+        .andExpect(jsonPath("$.page").value(1))
+        .andExpect(jsonPath("$.last").value(true));
   }
 
   @Test

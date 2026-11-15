@@ -7,7 +7,6 @@ import com.mygamelist.api.repository.GameRepository;
 import com.mygamelist.api.service.exception.ResourceNotFoundException;
 import java.time.Clock;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -63,10 +62,10 @@ public class GameCatalogService {
     return gameRepository.findByTitleContainingIgnoreCase(normalizedTitle, pageRequest);
   }
 
-  public List<Game> findRecentGames() {
+  public Page<Game> findRecentGames(int page, int size) {
     return gameRepository
-        .findTop18ByCoverUrlIsNotNullAndReleaseDateLessThanEqualOrderByReleaseDateDescIdAsc(
-            LocalDate.now(clock));
+        .findByCoverUrlIsNotNullAndReleaseDateLessThanEqualOrderByReleaseDateDescIdAsc(
+            LocalDate.now(clock), pageRequest(page, size, Sort.unsorted()));
   }
 
   private Game updateMetadata(Game game, String title, String coverUrl, LocalDate releaseDate) {
