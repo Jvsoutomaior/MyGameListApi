@@ -44,7 +44,7 @@ jobs:
     environment: production
     concurrency:
       group: backend-production
-      cancel-in-progress: false
+      queue: max
     steps:
       - name: Download the build artifact
         uses: actions/download-artifact@v8
