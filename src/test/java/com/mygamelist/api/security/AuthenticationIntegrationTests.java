@@ -23,8 +23,6 @@ import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -41,7 +39,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
-@SpringBootTest(properties = "app.registration.invite-code=test-invitation")
+@SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
 class AuthenticationIntegrationTests {
@@ -73,7 +71,7 @@ class AuthenticationIntegrationTests {
 
   @Test
   void locksConfirmationAfterFiveIncorrectCodes() {
-    registration.register("player", "player@example.com", "password123", "test-invitation");
+    registration.register("player", "player@example.com", "password123");
     String correct = confirmationCode;
     String wrong = correct.equals("00000000") ? "11111111" : "00000000";
     for (int attempt = 0; attempt < 5; attempt++) {
@@ -90,7 +88,7 @@ class AuthenticationIntegrationTests {
 
   @Test
   void expiresCodesAndDeletesAbandonedRegistrations() {
-    registration.register("player", "player@example.com", "password123", "test-invitation");
+    registration.register("player", "player@example.com", "password123");
     var user = userAccountRepository.findByEmail("player@example.com").orElseThrow();
     ReflectionTestUtils.setField(user, "verificationExpiresAt", Instant.now().minusSeconds(90000));
     userAccountRepository.save(user);
@@ -102,7 +100,7 @@ class AuthenticationIntegrationTests {
 
   @Test
   void rateLimitsResendsAndInvalidatesPreviousCodes() {
-    registration.register("player", "player@example.com", "password123", "test-invitation");
+    registration.register("player", "player@example.com", "password123");
     String previous = confirmationCode;
     assertThatThrownBy(() -> registration.resend("player@example.com", "password123"))
         .isInstanceOf(RegistrationCooldownException.class);
@@ -125,8 +123,7 @@ class AuthenticationIntegrationTests {
     doThrow(new RegistrationUnavailableException())
         .when(sender)
         .sendVerification(anyString(), anyString());
-    var result =
-        registration.register("player", "player@example.com", "password123", "test-invitation");
+    var result = registration.register("player", "player@example.com", "password123");
     assertThat(result.emailSent()).isFalse();
     assertThat(
             userAccountRepository.findByEmail("player@example.com").orElseThrow().isEmailVerified())
@@ -154,8 +151,7 @@ class AuthenticationIntegrationTests {
                             {
                               "username": "PlayerOne",
                               "email": "player@example.com",
-                              "password": "plain password",
-                              "invitationCode": "test-invitation"
+                              "password": "plain password"
                             }
                             """),
                 csrf))
@@ -255,33 +251,12 @@ class AuthenticationIntegrationTests {
                     {
                       "username": "playerone",
                       "email": "player@example.com",
-                      "password": "plain password",
-                      "invitationCode": "test-invitation"
+                      "password": "plain password"
                     }
                     """))
         .andExpect(status().isForbidden())
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.title").value("Access denied"));
-
-    assertThat(userAccountRepository.count()).isZero();
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"wrong-code", ""})
-  void rejectsInvalidInvitationWithoutPersistingUser(String invitationCode) throws Exception {
-    CsrfCredentials csrf = obtainCsrf(null);
-    mockMvc
-        .perform(
-            withCsrf(
-                post("/api/users")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-            {"username":"playerone","email":"player@example.com","password":"plain password","invitationCode":"%s"}
-            """
-                            .formatted(invitationCode)),
-                csrf))
-        .andExpect(status().isBadRequest());
 
     assertThat(userAccountRepository.count()).isZero();
   }

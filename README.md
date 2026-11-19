@@ -43,7 +43,7 @@ compilador:
 | Método | Endpoint | Acesso | Finalidade |
 | --- | --- | --- | --- |
 | `GET` | `/api/auth/csrf` | Público | Obtém o token CSRF |
-| `POST` | `/api/users` | Público, com convite | Inicia cadastro pendente e envia um código por e-mail |
+| `POST` | `/api/users` | Público, com CSRF | Inicia cadastro pendente e envia um código por e-mail |
 | `POST` | `/api/users/verify-email` | Público, com CSRF | Confirma e ativa a conta |
 | `POST` | `/api/users/resend-code` | Público, com CSRF | Reenvia código usando e-mail e senha do cadastro |
 | `POST` | `/api/auth/login` | Público | Inicia uma sessão |
@@ -84,7 +84,7 @@ As tentativas incorretas são persistidas mesmo quando a resposta indica erro.
 Para reenviar, envie e-mail e senha para `/api/users/resend-code`. Há intervalo de
 60 segundos, até 3 envios na mesma janela e preservação do limite de tentativas.
 O código anterior é invalidado. Após expirar a janela, um novo envio inicia outra.
-O cadastro pode ser retomado preenchendo os mesmos dados e convite. A limpeza
+O cadastro pode ser retomado preenchendo os mesmos dados. A limpeza
 horária exclui contas ainda pendentes cujo código expirou há mais de 24 horas.
 
 O envio usa a API HTTPS do Resend e ocorre após a persistência do cadastro/código.
@@ -105,8 +105,7 @@ e o Spring lê o arquivo pelo `configtree`. A chave fica somente no backend.
 
 `POST /api/users` e `POST /api/users/resend-code` compartilham, por padrão, até
 5 tentativas por IP e 200 tentativas
-no total em uma janela de 15 minutos. O limite conta também convites incorretos,
-campos inválidos e contas duplicadas. A checagem ocorre depois do CSRF e antes
+no total em uma janela de 15 minutos. O limite conta também campos inválidos e contas duplicadas. A checagem ocorre depois do CSRF e antes
 do processamento do cadastro. O bloqueio retorna HTTP `429` com `Retry-After`
 em segundos. As tentativas bloqueadas por IP também contam no limite total.
 

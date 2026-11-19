@@ -14,9 +14,8 @@ public class EmailRegistrationService {
     this.sender = sender;
   }
 
-  public PendingRegistration register(
-      String username, String email, String password, String invitation) {
-    return deliver(store.prepare(username, email, password, invitation));
+  public PendingRegistration register(String username, String email, String password) {
+    return deliver(store.prepare(username, email, password));
   }
 
   public PendingRegistration resend(String email, String password) {

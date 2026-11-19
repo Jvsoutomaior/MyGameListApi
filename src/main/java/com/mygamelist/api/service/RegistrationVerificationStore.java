@@ -41,11 +41,10 @@ public class RegistrationVerificationStore {
   }
 
   @Transactional
-  public PreparedCode prepare(String username, String email, String password, String invitation) {
-    accounts.validateInvitation(invitation);
+  public PreparedCode prepare(String username, String email, String password) {
     UserAccount user = users.lockByEmail(normalize(email)).orElse(null);
     if (user == null) {
-      user = accounts.register(username, email, password, invitation);
+      user = accounts.register(username, email, password);
     } else if (user.isEmailVerified()
         || !user.getUsername().equals(normalize(username))
         || !encoder.matches(password, user.getPasswordHash())) {

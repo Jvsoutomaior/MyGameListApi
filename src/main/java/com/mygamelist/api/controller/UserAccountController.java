@@ -28,9 +28,7 @@ public class UserAccountController {
   public ResponseEntity<PendingRegistration> register(
       @Valid @RequestBody RegisterUserRequest request) {
     return ResponseEntity.accepted()
-        .body(
-            registration.register(
-                request.username(), request.email(), request.password(), request.invitationCode()));
+        .body(registration.register(request.username(), request.email(), request.password()));
   }
 
   @PostMapping("/verify-email")

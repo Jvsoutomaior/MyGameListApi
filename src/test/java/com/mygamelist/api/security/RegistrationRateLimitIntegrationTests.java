@@ -32,7 +32,6 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 @SpringBootTest(
     properties = {
-      "app.registration.invite-code=test-invitation",
       "app.registration.rate-limit.requests-per-ip=2",
       "app.registration.rate-limit.global-requests=4",
       "app.registration.rate-limit.window-seconds=60"
@@ -130,8 +129,7 @@ class RegistrationRateLimitIntegrationTests {
             {
               "username": "player",
               "email": "player@example.com",
-              "password": "password123",
-              "invitationCode": "wrong-invitation"
+              "password": "short"
             }
             """);
   }

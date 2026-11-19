@@ -1,11 +1,6 @@
 {
   "properties": [
     {
-      "name": "app.registration.invite-code",
-      "type": "java.lang.String",
-      "description": "Invitation code required to register a user."
-    },
-    {
       "name": "app.cors.allowed-origin",
       "type": "java.lang.String",
       "description": "Allowed frontend origin for CORS requests."
