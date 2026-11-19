@@ -36,12 +36,7 @@ public class UserAccountService {
   @Transactional
   public UserAccount register(
       String username, String email, String rawPassword, String invitationCode) {
-    if (expectedInvitationCode == null || expectedInvitationCode.isBlank()) {
-      throw new RegistrationUnavailableException();
-    }
-    if (!expectedInvitationCode.equals(invitationCode)) {
-      throw new IllegalArgumentException("Invalid invitation code");
-    }
+    validateInvitation(invitationCode);
 
     String normalizedUsername = normalizeIdentifier(username, "username");
     String normalizedEmail = normalizeIdentifier(email, "email");
@@ -64,10 +59,20 @@ public class UserAccountService {
     return userAccountRepository.save(user);
   }
 
+  public void validateInvitation(String invitationCode) {
+    if (expectedInvitationCode == null || expectedInvitationCode.isBlank()) {
+      throw new RegistrationUnavailableException();
+    }
+    if (!expectedInvitationCode.equals(invitationCode)) {
+      throw new IllegalArgumentException("Invalid invitation code");
+    }
+  }
+
   public UserAccount findByUsername(String username) {
     String normalizedUsername = normalizeIdentifier(username, "username");
     return userAccountRepository
         .findByUsername(normalizedUsername)
+        .filter(UserAccount::isEmailVerified)
         .orElseThrow(() -> new ResourceNotFoundException("User not found: " + normalizedUsername));
   }
 

@@ -76,7 +76,7 @@ public class GameListService {
   public Page<GameListEntry> findPublicList(String username, int page, int size) {
     String normalizedUsername = normalizeUsername(username);
 
-    if (!userAccountRepository.existsByUsername(normalizedUsername)) {
+    if (!userAccountRepository.existsByUsernameAndEmailVerifiedTrue(normalizedUsername)) {
       throw new ResourceNotFoundException("User not found: " + normalizedUsername);
     }
 

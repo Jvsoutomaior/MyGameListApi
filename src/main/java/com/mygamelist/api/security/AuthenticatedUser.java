@@ -20,17 +20,29 @@ public final class AuthenticatedUser implements UserDetails {
   private final String username;
   private final String email;
   private final String passwordHash;
+  private final boolean enabled;
 
-  private AuthenticatedUser(UUID id, String username, String email, String passwordHash) {
+  private AuthenticatedUser(
+      UUID id, String username, String email, String passwordHash, boolean enabled) {
     this.id = id;
     this.username = username;
     this.email = email;
     this.passwordHash = passwordHash;
+    this.enabled = enabled;
   }
 
   public static AuthenticatedUser from(UserAccount user) {
     return new AuthenticatedUser(
-        user.getId(), user.getUsername(), user.getEmail(), user.getPasswordHash());
+        user.getId(),
+        user.getUsername(),
+        user.getEmail(),
+        user.getPasswordHash(),
+        user.isEmailVerified());
+  }
+
+  @Override
+  public boolean isEnabled() {
+    return enabled;
   }
 
   public UUID id() {

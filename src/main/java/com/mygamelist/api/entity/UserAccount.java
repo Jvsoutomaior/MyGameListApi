@@ -38,6 +38,74 @@ public class UserAccount {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
+  @Column(name = "email_verified", nullable = false)
+  private boolean emailVerified = true;
+
+  @Column(name = "verification_code_hash")
+  private String verificationCodeHash;
+
+  @Column(name = "verification_expires_at")
+  private Instant verificationExpiresAt;
+
+  @Column(name = "verification_last_sent_at")
+  private Instant verificationLastSentAt;
+
+  @Column(name = "verification_attempts", nullable = false)
+  private int verificationAttempts;
+
+  @Column(name = "verification_send_count", nullable = false)
+  private int verificationSendCount;
+
+  public void issueVerificationCode(String hash, Instant now) {
+    if (emailVerified || verificationExpiresAt == null || !verificationExpiresAt.isAfter(now)) {
+      verificationExpiresAt = now.plusSeconds(600);
+      verificationAttempts = 0;
+      verificationSendCount = 0;
+    }
+    emailVerified = false;
+    verificationCodeHash = hash;
+    verificationLastSentAt = now;
+    verificationSendCount++;
+  }
+
+  public boolean isEmailVerified() {
+    return emailVerified;
+  }
+
+  public String getVerificationCodeHash() {
+    return verificationCodeHash;
+  }
+
+  public Instant getVerificationExpiresAt() {
+    return verificationExpiresAt;
+  }
+
+  public Instant getVerificationLastSentAt() {
+    return verificationLastSentAt;
+  }
+
+  public int getVerificationSendCount() {
+    return verificationSendCount;
+  }
+
+  public int getVerificationAttempts() {
+    return verificationAttempts;
+  }
+
+  public void recordVerificationAttempt() {
+    verificationAttempts++;
+  }
+
+  public void verifyEmail(Instant now) {
+    emailVerified = true;
+    verificationCodeHash = null;
+    verificationExpiresAt = null;
+    verificationLastSentAt = null;
+    verificationAttempts = 0;
+    verificationSendCount = 0;
+    updatedAt = now;
+  }
+
   protected UserAccount() {}
 
   public UserAccount(String username, String email, String passwordHash, Instant createdAt) {

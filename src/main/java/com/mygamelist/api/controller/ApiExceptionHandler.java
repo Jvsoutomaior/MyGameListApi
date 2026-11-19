@@ -1,5 +1,6 @@
 package com.mygamelist.api.controller;
 
+import com.mygamelist.api.service.exception.RegistrationCooldownException;
 import com.mygamelist.api.service.exception.RegistrationUnavailableException;
 import com.mygamelist.api.service.exception.ResourceConflictException;
 import com.mygamelist.api.service.exception.ResourceNotFoundException;
@@ -8,6 +9,7 @@ import java.util.Map;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -15,6 +17,18 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+  @ExceptionHandler(RegistrationCooldownException.class)
+  ResponseEntity<ProblemDetail> handleRegistrationCooldown(
+      RegistrationCooldownException exception) {
+    return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+        .header("Retry-After", Long.toString(exception.retryAfterSeconds()))
+        .body(
+            problem(
+                HttpStatus.TOO_MANY_REQUESTS,
+                "Too many registration attempts",
+                exception.getMessage()));
+  }
 
   @ExceptionHandler(AuthenticationException.class)
   ProblemDetail handleAuthentication() {

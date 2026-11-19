@@ -2,6 +2,8 @@ package com.mygamelist.api.config;
 
 import com.mygamelist.api.repository.UserAccountRepository;
 import com.mygamelist.api.security.AuthenticatedUser;
+import com.mygamelist.api.security.RegistrationRateLimitFilter;
+import com.mygamelist.api.security.RegistrationRateLimiter;
 import com.mygamelist.api.security.SecurityProblemWriter;
 import jakarta.servlet.DispatcherType;
 import java.util.List;
@@ -21,6 +23,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -34,10 +37,14 @@ public class SecurityConfiguration {
       HttpSecurity http,
       SecurityContextRepository securityContextRepository,
       CsrfTokenRepository csrfTokenRepository,
-      SecurityProblemWriter securityProblemWriter)
+      SecurityProblemWriter securityProblemWriter,
+      RegistrationRateLimiter registrationRateLimiter)
       throws Exception {
     http.cors(Customizer.withDefaults())
         .csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository).spa())
+        .addFilterAfter(
+            new RegistrationRateLimitFilter(registrationRateLimiter, securityProblemWriter),
+            CsrfFilter.class)
         .securityContext(
             securityContext -> securityContext.securityContextRepository(securityContextRepository))
         .authorizeHttpRequests(
@@ -55,7 +62,12 @@ public class SecurityConfiguration {
                         "/swagger-ui/**",
                         "/swagger-ui.html")
                     .permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/users", "/api/auth/login")
+                    .requestMatchers(
+                        HttpMethod.POST,
+                        "/api/users",
+                        "/api/auth/login",
+                        "/api/users/verify-email",
+                        "/api/users/resend-code")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
@@ -120,7 +132,7 @@ public class SecurityConfiguration {
     configuration.setAllowedOrigins(List.of(corsProperties.getAllowedOrigin()));
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN"));
-    configuration.setExposedHeaders(List.of("Location"));
+    configuration.setExposedHeaders(List.of("Location", "Retry-After"));
     configuration.setAllowCredentials(true);
     configuration.setMaxAge(3600L);
 

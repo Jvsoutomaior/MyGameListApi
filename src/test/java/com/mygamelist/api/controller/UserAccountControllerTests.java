@@ -4,16 +4,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.mygamelist.api.entity.UserAccount;
-import com.mygamelist.api.service.UserAccountService;
+import com.mygamelist.api.service.EmailRegistrationService;
+import com.mygamelist.api.service.EmailRegistrationService.PendingRegistration;
 import com.mygamelist.api.service.exception.RegistrationUnavailableException;
 import com.mygamelist.api.service.exception.ResourceConflictException;
 import java.time.Instant;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,17 +20,15 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @ExtendWith(MockitoExtension.class)
 class UserAccountControllerTests {
 
-  private static final UUID USER_ID = UUID.fromString("10000000-0000-0000-0000-000000000001");
   private static final Instant CREATED_AT = Instant.parse("2026-09-02T12:00:00Z");
 
-  @Mock private UserAccountService userAccountService;
+  @Mock private EmailRegistrationService userAccountService;
 
   private MockMvc mockMvc;
 
@@ -47,12 +43,10 @@ class UserAccountControllerTests {
 
   @Test
   void registersUserWithoutExposingSensitiveFields() throws Exception {
-    UserAccount user =
-        new UserAccount("playerone", "player@example.com", "argon2id-hash", CREATED_AT);
-    ReflectionTestUtils.setField(user, "id", USER_ID);
     when(userAccountService.register(
             "PlayerOne", "player@example.com", "plain password", "test-invitation"))
-        .thenReturn(user);
+        .thenReturn(
+            new PendingRegistration("player@example.com", CREATED_AT.plusSeconds(600), true));
 
     mockMvc
         .perform(
@@ -67,12 +61,10 @@ class UserAccountControllerTests {
                       "invitationCode": "test-invitation"
                     }
                     """))
-        .andExpect(status().isCreated())
-        .andExpect(header().string("Location", "/api/users/playerone"))
-        .andExpect(jsonPath("$.id").value(USER_ID.toString()))
-        .andExpect(jsonPath("$.username").value("playerone"))
-        .andExpect(jsonPath("$.createdAt").value(CREATED_AT.toString()))
-        .andExpect(jsonPath("$.email").doesNotExist())
+        .andExpect(status().isAccepted())
+        .andExpect(jsonPath("$.email").value("player@example.com"))
+        .andExpect(jsonPath("$.emailSent").value(true))
+        .andExpect(jsonPath("$.code").doesNotExist())
         .andExpect(jsonPath("$.password").doesNotExist())
         .andExpect(jsonPath("$.passwordHash").doesNotExist())
         .andExpect(jsonPath("$.invitationCode").doesNotExist());

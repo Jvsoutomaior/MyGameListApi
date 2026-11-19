@@ -92,7 +92,7 @@ class GameListServiceTests {
 
   @Test
   void findsPublicListWithNormalizedUsernameAndStablePagination() {
-    when(userAccountRepository.existsByUsername("playerone")).thenReturn(true);
+    when(userAccountRepository.existsByUsernameAndEmailVerifiedTrue("playerone")).thenReturn(true);
     when(gameListEntryRepository.findByUserUsername(eq("playerone"), any(Pageable.class)))
         .thenReturn(Page.empty());
 
